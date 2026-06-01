@@ -89,6 +89,114 @@ public class TaskRepository {
         }
     }
 
+    public Optional<Task> markTaskRunning(long taskId, String agentName) throws SQLException {
+        String sql = """
+            update public.tasks
+            set status = ?, started_at = now()
+            where id = ? and assigned_agent = ? and status = ?
+            returning
+                id,
+                task_type,
+                input_data::text as input_data_json,
+                priority,
+                status,
+                assigned_agent,
+                result,
+                error,
+                created_at,
+                started_at,
+                finished_at
+            """;
+
+        try (Connection connection = openConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, TaskStatus.RUNNING.name());
+            statement.setLong(2, taskId);
+            statement.setString(3, agentName);
+            statement.setString(4, TaskStatus.ASSIGNED.name());
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    return Optional.empty();
+                }
+                return Optional.of(mapTask(resultSet));
+            }
+        }
+    }
+
+    public Optional<Task> markTaskCompleted(long taskId, String agentName, String result) throws SQLException {
+        String sql = """
+            update public.tasks
+            set status = ?, result = ?, finished_at = now()
+            where id = ? and assigned_agent = ? and status = ?
+            returning
+                id,
+                task_type,
+                input_data::text as input_data_json,
+                priority,
+                status,
+                assigned_agent,
+                result,
+                error,
+                created_at,
+                started_at,
+                finished_at
+            """;
+
+        try (Connection connection = openConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, TaskStatus.COMPLETED.name());
+            statement.setString(2, result);
+            statement.setLong(3, taskId);
+            statement.setString(4, agentName);
+            statement.setString(5, TaskStatus.RUNNING.name());
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    return Optional.empty();
+                }
+                return Optional.of(mapTask(resultSet));
+            }
+        }
+    }
+
+    public Optional<Task> markTaskFailed(long taskId, String agentName, String error) throws SQLException {
+        String sql = """
+            update public.tasks
+            set status = ?, error = ?, finished_at = now()
+            where id = ? and assigned_agent = ? and status in (?, ?)
+            returning
+                id,
+                task_type,
+                input_data::text as input_data_json,
+                priority,
+                status,
+                assigned_agent,
+                result,
+                error,
+                created_at,
+                started_at,
+                finished_at
+            """;
+
+        try (Connection connection = openConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, TaskStatus.FAILED.name());
+            statement.setString(2, error);
+            statement.setLong(3, taskId);
+            statement.setString(4, agentName);
+            statement.setString(5, TaskStatus.ASSIGNED.name());
+            statement.setString(6, TaskStatus.RUNNING.name());
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    return Optional.empty();
+                }
+                return Optional.of(mapTask(resultSet));
+            }
+        }
+    }
+
     private Connection openConnection() throws SQLException {
         return DriverManager.getConnection(
             DatabaseConfig.jdbcUrl(),
