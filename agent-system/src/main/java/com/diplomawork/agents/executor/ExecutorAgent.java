@@ -1,6 +1,8 @@
 package com.diplomawork.agents.executor;
 
 import com.diplomawork.agents.db.TaskRepository;
+import com.diplomawork.agents.execution.TaskExecutionException;
+import com.diplomawork.agents.execution.TaskExecutor;
 import com.diplomawork.agents.model.Task;
 
 import jade.core.Agent;
@@ -13,11 +15,11 @@ import java.util.Optional;
 /**
  * Minimal executor agent that receives task assignment messages.
  *
- * This version marks assigned tasks as running, simulates execution, and marks
- * them completed with a placeholder result.
+ * This version marks assigned tasks as running, executes supported task types,
+ * and marks them completed with the execution result.
  */
 public class ExecutorAgent extends Agent {
-    private static final long SIMULATED_WORK_MILLIS = 1000L;
+    private final TaskExecutor taskExecutor = new TaskExecutor();
 
     @Override
     protected void setup() {
@@ -59,12 +61,12 @@ public class ExecutorAgent extends Agent {
                 System.out.println(getLocalName() + " started task:");
                 System.out.println(runningTask.get());
 
-                Thread.sleep(SIMULATED_WORK_MILLIS);
+                String result = taskExecutor.execute(runningTask.get());
 
                 Optional<Task> completedTask = repository.markTaskCompleted(
                     taskId,
                     getLocalName(),
-                    "Executed by " + getLocalName()
+                    result
                 );
 
                 if (completedTask.isEmpty()) {
@@ -75,9 +77,10 @@ public class ExecutorAgent extends Agent {
 
                 System.out.println(getLocalName() + " completed task:");
                 System.out.println(completedTask.get());
-            } catch (InterruptedException error) {
-                Thread.currentThread().interrupt();
-                markFailed(repository, taskId, "Execution interrupted");
+            } catch (TaskExecutionException error) {
+                System.err.println(getLocalName() + " could not execute task " + taskId
+                    + ": " + error.getMessage());
+                markFailed(repository, taskId, error.getMessage());
             } catch (SQLException error) {
                 System.err.println(getLocalName() + " failed while executing task " + taskId
                     + ": " + error.getMessage());
