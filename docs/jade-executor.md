@@ -35,4 +35,48 @@ Result:
 hello
 ```
 
+### TEXT_SUMMARY
+
+Input:
+
+```json
+{"text": "long text to summarize", "max_length": 120}
+```
+
+Result:
+
+```text
+The input text normalized and truncated to `max_length` characters.
+```
+
+`max_length` is optional and defaults to 120.
+
 Unsupported task types are marked `FAILED`.
+
+## Failure Path
+
+### TEXT_SUMMARY
+
+Input:
+
+```json
+{"text": "long text to summarize", "max_length": 120}
+```
+
+Result:
+
+```text
+The input text normalized and truncated to `max_length` characters.
+```
+
+`max_length` is optional and defaults to 120.
+
+Unsupported task types are marked `FAILED`.
+
+Verified example:
+
+```text
+task_type: UNKNOWN_TASK
+status: FAILED
+error: Unsupported task type: UNKNOWN_TASK
+```

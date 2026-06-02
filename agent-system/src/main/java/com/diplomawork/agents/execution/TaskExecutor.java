@@ -10,12 +10,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class TaskExecutor {
     private static final String ECHO_TASK_TYPE = "ECHO";
+    private static final String TEXT_SUMMARY_TASK_TYPE = "TEXT_SUMMARY";
+    private static final int DEFAULT_SUMMARY_MAX_LENGTH = 120;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public String execute(Task task) throws TaskExecutionException {
         if (ECHO_TASK_TYPE.equals(task.getTaskType())) {
             return executeEcho(task);
+        }
+        if (TEXT_SUMMARY_TASK_TYPE.equals(task.getTaskType())) {
+            return executeTextSummary(task);
         }
 
         throw new TaskExecutionException("Unsupported task type: " + task.getTaskType());
@@ -28,6 +33,37 @@ public class TaskExecutor {
             throw new TaskExecutionException("ECHO task requires input_data.message as text");
         }
         return message.asText();
+    }
+
+    private String executeTextSummary(Task task) throws TaskExecutionException {
+        JsonNode input = parseInput(task);
+        JsonNode text = input.get("text");
+        if (text == null || !text.isTextual()) {
+            throw new TaskExecutionException("TEXT_SUMMARY task requires input_data.text as text");
+        }
+
+        int maxLength = readMaxLength(input);
+        String normalizedText = normalizeWhitespace(text.asText());
+        if (normalizedText.length() <= maxLength) {
+            return normalizedText;
+        }
+
+        return normalizedText.substring(0, maxLength).trim() + "...";
+    }
+
+    private int readMaxLength(JsonNode input) throws TaskExecutionException {
+        JsonNode maxLength = input.get("max_length");
+        if (maxLength == null || maxLength.isNull()) {
+            return DEFAULT_SUMMARY_MAX_LENGTH;
+        }
+        if (!maxLength.isInt() || maxLength.asInt() <= 0) {
+            throw new TaskExecutionException("TEXT_SUMMARY input_data.max_length must be a positive integer");
+        }
+        return maxLength.asInt();
+    }
+
+    private String normalizeWhitespace(String value) {
+        return value.trim().replaceAll("\s+", " ");
     }
 
     private JsonNode parseInput(Task task) throws TaskExecutionException {
