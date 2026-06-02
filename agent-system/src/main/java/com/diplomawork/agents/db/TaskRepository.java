@@ -54,6 +54,28 @@ public class TaskRepository {
         }
     }
 
+
+    public int countActiveTasksForAgent(String agentName) throws SQLException {
+        String sql = """
+            select count(*)
+            from public.tasks
+            where assigned_agent = ?
+              and status in (?, ?)
+            """;
+
+        try (Connection connection = openConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, agentName);
+            statement.setString(2, TaskStatus.ASSIGNED.name());
+            statement.setString(3, TaskStatus.RUNNING.name());
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                resultSet.next();
+                return resultSet.getInt(1);
+            }
+        }
+    }
+
     public Optional<Task> assignPendingTask(long taskId, String agentName) throws SQLException {
         String sql = """
             update public.tasks
