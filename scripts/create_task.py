@@ -13,7 +13,7 @@ from db.task_repository import create_task
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Create a multi-agent task in PostgreSQL.")
-    parser.add_argument("task_type", help="Task type, for example TEXT_SUMMARY or PYTHON_SCRIPT.")
+    parser.add_argument("task_type", help="Task type, for example TEXT_SUMMARY or TEXT_STATS.")
     parser.add_argument(
         "--input-json",
         default="{}",
