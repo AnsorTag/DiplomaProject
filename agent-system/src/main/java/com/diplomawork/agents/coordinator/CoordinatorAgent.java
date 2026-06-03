@@ -5,6 +5,7 @@ import com.diplomawork.agents.model.Task;
 
 import jade.core.AID;
 import jade.core.Agent;
+import jade.core.behaviours.TickerBehaviour;
 import jade.lang.acl.ACLMessage;
 
 import java.sql.SQLException;
@@ -16,18 +17,31 @@ import java.util.Optional;
 /**
  * JADE coordinator agent.
  *
- * On startup, it performs one scheduling step by assigning the highest-priority
- * pending task to the least-loaded configured executor agent and sending a JADE
- * message with the task id.
+ * It periodically assigns the highest-priority pending task to the least-loaded
+ * configured executor agent and sends a JADE message with the task id.
  */
 public class CoordinatorAgent extends Agent {
     private static final int DEFAULT_TASK_LIMIT = 10;
+    private static final long SCHEDULING_INTERVAL_MILLIS = 2000L;
     private static final String DEFAULT_EXECUTOR_AGENT_NAME = "executor";
 
     @Override
     protected void setup() {
         System.out.println(getLocalName() + " started.");
+        System.out.println(getLocalName() + " scheduling interval ms: " + SCHEDULING_INTERVAL_MILLIS);
         assignOnePendingTask();
+        addBehaviour(new SchedulingBehaviour(this, SCHEDULING_INTERVAL_MILLIS));
+    }
+
+    private class SchedulingBehaviour extends TickerBehaviour {
+        SchedulingBehaviour(Agent agent, long period) {
+            super(agent, period);
+        }
+
+        @Override
+        protected void onTick() {
+            assignOnePendingTask();
+        }
     }
 
     private void assignOnePendingTask() {

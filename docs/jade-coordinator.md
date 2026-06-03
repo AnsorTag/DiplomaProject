@@ -1,6 +1,6 @@
 # JADE Coordinator Agent
 
-The JADE coordinator performs one controlled scheduling action and notifies the selected executor agent.
+The JADE coordinator periodically schedules pending tasks and notifies the selected executor agent.
 
 ## File
 
@@ -11,13 +11,18 @@ The JADE coordinator performs one controlled scheduling action and notifies the 
 On startup, the agent:
 
 1. prints its local JADE agent name;
-2. uses `TaskRepository.findPendingTasks(10)`;
-3. reads configured executor names from JADE agent arguments;
-4. selects the least-loaded executor by counting active `ASSIGNED` and `RUNNING` tasks;
-5. selects the first pending task by repository ordering;
-6. calls `TaskRepository.assignPendingTask(taskId, selectedExecutor)`;
-7. updates the task only if it is still `PENDING`;
-8. sends a JADE `REQUEST` message to the selected executor with the task id.
+2. performs one immediate scheduling attempt;
+3. starts a `TickerBehaviour` that repeats scheduling every 2 seconds.
+
+On each scheduling attempt, the agent:
+
+1. uses `TaskRepository.findPendingTasks(10)`;
+2. reads configured executor names from JADE agent arguments;
+3. selects the least-loaded executor by counting active `ASSIGNED` and `RUNNING` tasks;
+4. selects the first pending task by repository ordering;
+5. calls `TaskRepository.assignPendingTask(taskId, selectedExecutor)`;
+6. updates the task only if it is still `PENDING`;
+7. sends a JADE `REQUEST` message to the selected executor with the task id.
 
 ## Dependency Note
 
@@ -36,7 +41,7 @@ This starts a JADE platform and launches one coordinator agent.
 For a short verification run without leaving the platform active:
 
 ```bash
-timeout 10s mvn exec:java -Dexec.mainClass=jade.Boot -Dexec.args="-agents executor1:com.diplomawork.agents.executor.ExecutorAgent;executor2:com.diplomawork.agents.executor.ExecutorAgent;coordinator:com.diplomawork.agents.coordinator.CoordinatorAgent(executor1,executor2)"
+timeout 30s mvn exec:java -Dexec.mainClass=jade.Boot -Dexec.args="-agents executor1:com.diplomawork.agents.executor.ExecutorAgent;executor2:com.diplomawork.agents.executor.ExecutorAgent;coordinator:com.diplomawork.agents.coordinator.CoordinatorAgent(executor1,executor2)"
 ```
 
-Verified behavior: the coordinator starts, reads pending tasks from PostgreSQL, chooses a configured executor by load, atomically assigns one pending task, and sends the selected executor a task assignment message.
+Verified behavior: the coordinator starts, repeatedly reads pending tasks from PostgreSQL, chooses a configured executor by load, atomically assigns pending tasks, and sends the selected executor a task assignment message.
