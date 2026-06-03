@@ -9,7 +9,7 @@ package com.diplomawork.agents.db;
 public final class DatabaseConfig {
     private static final String DEFAULT_JDBC_URL = "jdbc:postgresql://localhost:5432/tasks";
     private static final String DEFAULT_USER = "postgres";
-    private static final String DEFAULT_PASSWORD = "postgres";
+    private static final String DEFAULT_PASSWORD = "";
 
     private DatabaseConfig() {
     }

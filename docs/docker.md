@@ -16,9 +16,9 @@ The compose file uses host networking for local Linux demos and defaults to conn
 
 ```text
 DB_JDBC_URL=jdbc:postgresql://localhost:5432/tasks
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/tasks
+DATABASE_URL=postgresql://DB_USER:DB_PASSWORD@localhost:5432/tasks
 DB_USER=postgres
-DB_PASSWORD=postgres
+DB_PASSWORD=your_db_password
 ```
 
 This matches the existing local development defaults and works when PostgreSQL is already available on the host at `localhost:5432`.

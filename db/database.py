@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 
 load_dotenv()
 
-DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/tasks"
+DEFAULT_DATABASE_URL = "postgresql://postgres@localhost:5432/tasks"
 DATABASE_URL = os.getenv("DATABASE_URL", DEFAULT_DATABASE_URL)
 
 engine = create_engine(DATABASE_URL)
