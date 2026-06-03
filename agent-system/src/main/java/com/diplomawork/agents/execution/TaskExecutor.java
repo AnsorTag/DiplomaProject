@@ -11,9 +11,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class TaskExecutor {
     private static final String ECHO_TASK_TYPE = "ECHO";
     private static final String TEXT_SUMMARY_TASK_TYPE = "TEXT_SUMMARY";
+    private static final String PYTHON_ECHO_TASK_TYPE = "PYTHON_ECHO";
     private static final int DEFAULT_SUMMARY_MAX_LENGTH = 120;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final PythonTaskRunner pythonTaskRunner = new PythonTaskRunner();
 
     public String execute(Task task) throws TaskExecutionException {
         if (ECHO_TASK_TYPE.equals(task.getTaskType())) {
@@ -21,6 +23,9 @@ public class TaskExecutor {
         }
         if (TEXT_SUMMARY_TASK_TYPE.equals(task.getTaskType())) {
             return executeTextSummary(task);
+        }
+        if (PYTHON_ECHO_TASK_TYPE.equals(task.getTaskType())) {
+            return pythonTaskRunner.run(task.getTaskType(), task.getInputDataJson());
         }
 
         throw new TaskExecutionException("Unsupported task type: " + task.getTaskType());
@@ -63,7 +68,7 @@ public class TaskExecutor {
     }
 
     private String normalizeWhitespace(String value) {
-        return value.trim().replaceAll("\s+", " ");
+        return value.trim().replaceAll("\\s+", " ");
     }
 
     private JsonNode parseInput(Task task) throws TaskExecutionException {

@@ -51,25 +51,23 @@ The input text normalized and truncated to `max_length` characters.
 
 `max_length` is optional and defaults to 120.
 
-Unsupported task types are marked `FAILED`.
-
-## Failure Path
-
-### TEXT_SUMMARY
+### PYTHON_ECHO
 
 Input:
 
 ```json
-{"text": "long text to summarize", "max_length": 120}
+{"message": "hello from Python"}
 ```
 
 Result:
 
 ```text
-The input text normalized and truncated to `max_length` characters.
+hello from Python
 ```
 
-`max_length` is optional and defaults to 120.
+This task is executed by the Java executor through `python_tasks/run_task.py`.
+
+## Failure Path
 
 Unsupported task types are marked `FAILED`.
 
