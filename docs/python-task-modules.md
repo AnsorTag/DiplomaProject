@@ -30,3 +30,18 @@ Result:
 ```text
 hello from Python
 ```
+
+
+### TEXT_STATS
+
+Input:
+
+```json
+{"text": "One line.\nSecond line."}
+```
+
+Result:
+
+```json
+{"character_count":22,"word_count":4,"line_count":2}
+```

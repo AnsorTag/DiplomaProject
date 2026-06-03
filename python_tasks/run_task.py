@@ -1,4 +1,5 @@
 import json
+import re
 import sys
 
 
@@ -13,9 +14,25 @@ def execute_python_echo(input_data: dict) -> str:
     return message
 
 
+def execute_text_stats(input_data: dict) -> str:
+    text = input_data.get("text")
+    if not isinstance(text, str):
+        raise TaskExecutionError("TEXT_STATS task requires input_data.text as text")
+
+    words = re.findall(r"\b\w+\b", text)
+    stats = {
+        "character_count": len(text),
+        "word_count": len(words),
+        "line_count": len(text.splitlines()) if text else 0,
+    }
+    return json.dumps(stats, separators=(",", ":"))
+
+
 def execute(task_type: str, input_data: dict) -> str:
     if task_type == "PYTHON_ECHO":
         return execute_python_echo(input_data)
+    if task_type == "TEXT_STATS":
+        return execute_text_stats(input_data)
     raise TaskExecutionError(f"Unsupported Python task type: {task_type}")
 
 

@@ -67,6 +67,22 @@ hello from Python
 
 This task is executed by the Java executor through `python_tasks/run_task.py`.
 
+### TEXT_STATS
+
+Input:
+
+```json
+{"text": "One line.\nSecond line."}
+```
+
+Result:
+
+```json
+{"character_count":22,"word_count":4,"line_count":2}
+```
+
+This task is executed by the Java executor through `python_tasks/run_task.py`.
+
 ## Failure Path
 
 Unsupported task types are marked `FAILED`.
