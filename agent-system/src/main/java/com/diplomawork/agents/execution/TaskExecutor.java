@@ -13,6 +13,7 @@ public class TaskExecutor {
     private static final String TEXT_SUMMARY_TASK_TYPE = "TEXT_SUMMARY";
     private static final String PYTHON_ECHO_TASK_TYPE = "PYTHON_ECHO";
     private static final String TEXT_STATS_TASK_TYPE = "TEXT_STATS";
+    private static final String KEYWORD_COUNT_TASK_TYPE = "KEYWORD_COUNT";
     private static final int DEFAULT_SUMMARY_MAX_LENGTH = 120;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -25,7 +26,9 @@ public class TaskExecutor {
         if (TEXT_SUMMARY_TASK_TYPE.equals(task.getTaskType())) {
             return executeTextSummary(task);
         }
-        if (PYTHON_ECHO_TASK_TYPE.equals(task.getTaskType()) || TEXT_STATS_TASK_TYPE.equals(task.getTaskType())) {
+        if (PYTHON_ECHO_TASK_TYPE.equals(task.getTaskType())
+            || TEXT_STATS_TASK_TYPE.equals(task.getTaskType())
+            || KEYWORD_COUNT_TASK_TYPE.equals(task.getTaskType())) {
             return pythonTaskRunner.run(task.getTaskType(), task.getInputDataJson());
         }
 

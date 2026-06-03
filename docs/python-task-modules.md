@@ -45,3 +45,18 @@ Result:
 ```json
 {"character_count":22,"word_count":4,"line_count":2}
 ```
+
+
+### KEYWORD_COUNT
+
+Input:
+
+```json
+{"text": "Java agents call Python agents", "keyword": "agents"}
+```
+
+Result:
+
+```json
+{"keyword":"agents","count":2}
+```

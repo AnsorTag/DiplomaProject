@@ -83,6 +83,22 @@ Result:
 
 This task is executed by the Java executor through `python_tasks/run_task.py`.
 
+### KEYWORD_COUNT
+
+Input:
+
+```json
+{"text": "Java agents call Python agents", "keyword": "agents"}
+```
+
+Result:
+
+```json
+{"keyword":"agents","count":2}
+```
+
+This task is executed by the Java executor through `python_tasks/run_task.py`.
+
 ## Failure Path
 
 Unsupported task types are marked `FAILED`.

@@ -22,4 +22,8 @@ CREATE_TASK="${PROJECT_ROOT}/scripts/create_task.py"
     --priority 10 \
     --input-json '{"text":"One line.\nSecond line."}'
 
+"${PYTHON}" "${CREATE_TASK}" KEYWORD_COUNT \
+    --priority 5 \
+    --input-json '{"text":"Java agents call Python agents", "keyword":"agents"}'
+
 echo "Created demo tasks. Start agents with: scripts/run_agents.sh"

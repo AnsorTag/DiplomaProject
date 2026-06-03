@@ -28,11 +28,29 @@ def execute_text_stats(input_data: dict) -> str:
     return json.dumps(stats, separators=(",", ":"))
 
 
+def execute_keyword_count(input_data: dict) -> str:
+    text = input_data.get("text")
+    keyword = input_data.get("keyword")
+    if not isinstance(text, str):
+        raise TaskExecutionError("KEYWORD_COUNT task requires input_data.text as text")
+    if not isinstance(keyword, str) or not keyword:
+        raise TaskExecutionError("KEYWORD_COUNT task requires input_data.keyword as non-empty text")
+
+    count = len(re.findall(rf"\b{re.escape(keyword)}\b", text, flags=re.IGNORECASE))
+    result = {
+        "keyword": keyword,
+        "count": count,
+    }
+    return json.dumps(result, separators=(",", ":"))
+
+
 def execute(task_type: str, input_data: dict) -> str:
     if task_type == "PYTHON_ECHO":
         return execute_python_echo(input_data)
     if task_type == "TEXT_STATS":
         return execute_text_stats(input_data)
+    if task_type == "KEYWORD_COUNT":
+        return execute_keyword_count(input_data)
     raise TaskExecutionError(f"Unsupported Python task type: {task_type}")
 
 

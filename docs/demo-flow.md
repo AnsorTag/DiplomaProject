@@ -61,6 +61,7 @@ This creates one task for each supported task type:
 - `TEXT_SUMMARY`
 - `PYTHON_ECHO`
 - `TEXT_STATS`
+- `KEYWORD_COUNT`
 
 ## 5. Run the Agents
 

@@ -172,6 +172,32 @@ Result:
 {"character_count":22,"word_count":4,"line_count":2}
 ```
 
+### KEYWORD_COUNT
+
+Executor:
+
+- Java executor through `python_tasks/run_task.py`
+
+Input:
+
+```json
+{"text": "Java agents call Python agents", "keyword": "agents"}
+```
+
+Rules:
+
+- `input_data.text` is required.
+- `text` must be text.
+- `input_data.keyword` is required.
+- `keyword` must be non-empty text.
+- matching is case-insensitive and counts whole-word matches.
+
+Result:
+
+```json
+{"keyword":"agents","count":2}
+```
+
 ## Error Behavior
 
 If input validation fails, the executor marks the task `FAILED` and stores the error message in `error`.
