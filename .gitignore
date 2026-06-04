@@ -8,6 +8,7 @@ venv/
 # Java / Maven
 target/
 *.class
+agent-system/APDescription.txt
 
 # IDE / OS
 .idea/
