@@ -172,7 +172,8 @@ Rules:
 Result:
 
 ```text
-The normalized text truncated to max_length characters.
+The normalized text truncated to at most max_length characters, including any
+trailing ellipsis.
 ```
 
 ### PYTHON_ECHO

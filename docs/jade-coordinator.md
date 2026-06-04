@@ -31,7 +31,9 @@ On each scheduling attempt, the agent:
 
 ## Dependency Note
 
-The older `com.tilab.jade:jade` artifact is hosted outside Maven Central. The project uses the Maven-compatible JADE GitLab/JitPack coordinates documented by the JADE project site.
+The older `com.tilab.jade:jade` artifact is hosted outside Maven Central. The
+project uses a pinned build from the Maven-compatible JADE GitLab/JitPack
+coordinates documented by the JADE project site.
 
 ## Run
 

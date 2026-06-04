@@ -1,19 +1,24 @@
 # Demo Flow
 
-This flow demonstrates the current multi-agent scheduler without creating a new database setup.
+This flow demonstrates the current multi-agent scheduler using an existing
+PostgreSQL server and database.
 
 It assumes:
 
 - PostgreSQL is already running.
-- The existing `public.tasks` table is available.
+- The configured PostgreSQL database exists and is accessible.
 - The Python virtual environment exists at `venv/`.
 - Java and Maven are installed.
 
-After pulling schema-related changes, run the idempotent migration:
+After creating the database or pulling schema-related changes, run the
+idempotent migration:
 
 ```bash
 ./venv/bin/python scripts/migrate_tasks_multi_agent.py
 ```
+
+It creates `public.tasks` when absent and upgrades the current task schema when
+present.
 
 ## 1. Check the Current Queue
 
@@ -55,7 +60,8 @@ Apply:
 
 This resolves stale `ASSIGNED` or `RUNNING` tasks. Tasks with attempts remaining
 return to `PENDING`; exhausted tasks become `FAILED`. `ASSIGNED` age is measured
-from `assigned_at`; `RUNNING` age is measured from `started_at`.
+from `assigned_at`; `RUNNING` age is measured from `started_at`. Apply mode locks
+matching rows while resolving them so concurrently claimed rows are skipped.
 
 ## 4. Create Demo Tasks
 

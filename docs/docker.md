@@ -1,6 +1,6 @@
 # Docker Setup
 
-Docker packaging is optional. It packages the Java JADE agents and Python task modules, but it does not create a new PostgreSQL database.
+Docker packaging is optional. It packages the Java JADE agents and Python task modules, but it does not create a PostgreSQL server or database.
 
 The container is expected to connect to the existing PostgreSQL server through environment variables.
 
@@ -61,7 +61,8 @@ That starts:
 ## Notes
 
 - PostgreSQL is not containerized here.
-- The existing `public.tasks` table is reused.
+- Run `scripts/migrate_tasks_multi_agent.py` on the host before starting the
+  agents. It creates `public.tasks` when absent and upgrades it when present.
 - The compose service uses `network_mode: host` so the container can reach the host PostgreSQL service through `localhost`.
 - Python task modules run inside the container through `/app/venv/bin/python`.
 - Java reads PostgreSQL through `DB_JDBC_URL`, `DB_USER`, and `DB_PASSWORD`.

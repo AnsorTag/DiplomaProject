@@ -16,7 +16,8 @@ The Java default connection target is:
 jdbc:postgresql://localhost:5432/tasks
 ```
 
-Configure credentials through environment variables or the ignored root `.env` file:
+Configure credentials through environment variables. The repository's Bash
+wrapper scripts load the ignored root `.env` file before starting Java:
 
 ```text
 DB_JDBC_URL
@@ -39,13 +40,19 @@ Compile:
 ```bash
 cd agent-system
 mvn compile
+cd ..
 ```
 
 Run the read-only database check:
 
 ```bash
+set -a
+source .env
+set +a
+
 cd agent-system
 mvn exec:java -Dexec.mainClass=com.diplomawork.agents.db.DatabaseConnectionCheck
+cd ..
 ```
 
 Apply the idempotent task schema migration after pulling schema-related changes:
@@ -53,6 +60,9 @@ Apply the idempotent task schema migration after pulling schema-related changes:
 ```bash
 ./venv/bin/python scripts/migrate_tasks_multi_agent.py
 ```
+
+The migration creates `public.tasks` when it is absent and upgrades an existing
+table without deleting its task rows.
 
 ## Task Repository
 
@@ -71,15 +81,25 @@ Task creation and status transitions are recorded atomically by the PostgreSQL
 Run the pending task check:
 
 ```bash
+set -a
+source .env
+set +a
+
 cd agent-system
 mvn exec:java -Dexec.mainClass=com.diplomawork.agents.db.PendingTasksCheck -Dexec.args="10"
+cd ..
 ```
 
 Assign a pending task to an agent:
 
 ```bash
+set -a
+source .env
+set +a
+
 cd agent-system
 mvn exec:java -Dexec.mainClass=com.diplomawork.agents.db.AssignTaskCheck -Dexec.args="1 coordinator-agent-1"
+cd ..
 ```
 
 The assignment update only succeeds when the task is still `PENDING`.

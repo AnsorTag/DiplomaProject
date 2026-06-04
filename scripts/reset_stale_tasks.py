@@ -17,7 +17,7 @@ def stale_cutoff(minutes: int) -> datetime:
     return datetime.now(timezone.utc) - timedelta(minutes=minutes)
 
 
-def find_stale_tasks(session, cutoff: datetime):
+def find_stale_tasks(session, cutoff: datetime, lock: bool = False):
     statement = (
         select(Task)
         .where(
@@ -34,6 +34,8 @@ def find_stale_tasks(session, cutoff: datetime):
         )
         .order_by(Task.created_at.asc(), Task.id.asc())
     )
+    if lock:
+        statement = statement.with_for_update(skip_locked=True)
     return session.execute(statement).scalars().all()
 
 
@@ -96,7 +98,7 @@ def main() -> None:
 
     cutoff = stale_cutoff(args.minutes)
     with SessionLocal() as session:
-        tasks = find_stale_tasks(session, cutoff)
+        tasks = find_stale_tasks(session, cutoff, lock=args.apply)
         print(f"Cutoff: active timestamp before {cutoff.isoformat()}")
         print_tasks(tasks)
 

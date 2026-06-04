@@ -34,7 +34,18 @@ public class TaskExecutorTest {
             "{\"text\":\"  one   two\\nthree four  \",\"max_length\":13}"
         ));
 
-        assertEquals("one two three...", result);
+        assertEquals("one two th...", result);
+        assertEquals(13, result.length());
+    }
+
+    @Test
+    public void keepsShortSummaryWithinMaxLength() throws TaskExecutionException {
+        String result = executor.execute(task(
+            "TEXT_SUMMARY",
+            "{\"text\":\"long text\",\"max_length\":2}"
+        ));
+
+        assertEquals("..", result);
     }
 
     @Test

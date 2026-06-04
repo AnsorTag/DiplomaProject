@@ -57,7 +57,11 @@ public class TaskExecutor {
             return normalizedText;
         }
 
-        return normalizedText.substring(0, maxLength).trim() + "...";
+        if (maxLength <= 3) {
+            return ".".repeat(maxLength);
+        }
+
+        return normalizedText.substring(0, maxLength - 3).trim() + "...";
     }
 
     private int readMaxLength(JsonNode input) throws TaskExecutionException {
