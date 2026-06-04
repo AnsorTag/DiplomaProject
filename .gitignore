@@ -9,6 +9,7 @@ venv/
 target/
 *.class
 agent-system/APDescription.txt
+agent-system/MTPs-Main-Container.txt
 
 # IDE / OS
 .idea/
