@@ -14,6 +14,7 @@ agent-system/APDescription.txt
 .idea/
 .vscode/
 .DS_Store
+/AGENT.md
 
 # Logs
 *.log
