@@ -75,17 +75,6 @@ The application uses a PostgreSQL database named `tasks`. Connection properties
 in `.env` only tell the application how to connect; they do not install
 PostgreSQL or create the database.
 
-### Use an Existing Compatible Database
-
-If PostgreSQL already contains the project `tasks` database:
-
-1. configure `.env` with its connection details;
-2. run `scripts/migrate_tasks_multi_agent.py`.
-
-The migration creates `public.tasks` when it is absent. When the table already
-exists, it preserves task rows while adding the current multi-agent fields,
-constraints, indexes, event table, and event trigger.
-
 ### Initialize a Fresh Local Database
 
 The following is an Ubuntu/Debian Linux example. Installation commands differ
