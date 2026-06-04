@@ -56,6 +56,81 @@ create index if not exists idx_tasks_assigned_agent
 
 create index if not exists idx_tasks_assigned_at
     on public.tasks (assigned_at);
+
+create table if not exists public.task_events (
+    id bigserial primary key,
+    task_id integer not null references public.tasks (id) on delete cascade,
+    event_type varchar(30) not null,
+    from_status varchar(30),
+    to_status varchar(30) not null,
+    agent_name varchar(100),
+    details jsonb not null default '{}'::jsonb,
+    created_at timestamp with time zone not null default now()
+);
+
+create index if not exists idx_task_events_task_created
+    on public.task_events (task_id, created_at desc);
+
+create or replace function public.record_task_status_event()
+returns trigger
+language plpgsql
+as $$
+declare
+    lifecycle_event varchar(30);
+begin
+    if tg_op = 'INSERT' then
+        lifecycle_event := 'CREATED';
+    elsif new.status is distinct from old.status then
+        lifecycle_event := case
+            when new.status = 'ASSIGNED' then 'ASSIGNED'
+            when new.status = 'RUNNING' then 'STARTED'
+            when new.status = 'COMPLETED' then 'COMPLETED'
+            when new.status = 'FAILED' then 'FAILED'
+            when new.status = 'CANCELLED' then 'CANCELLED'
+            when new.status = 'PENDING' and old.status in ('ASSIGNED', 'RUNNING') then 'RECOVERED'
+            else 'STATUS_CHANGED'
+        end;
+    else
+        return new;
+    end if;
+
+    insert into public.task_events (
+        task_id,
+        event_type,
+        from_status,
+        to_status,
+        agent_name,
+        details
+    )
+    values (
+        new.id,
+        lifecycle_event,
+        case when tg_op = 'UPDATE' then old.status else null end,
+        new.status,
+        case
+            when new.assigned_agent is not null then new.assigned_agent
+            when tg_op = 'UPDATE' then old.assigned_agent
+            else null
+        end,
+        jsonb_strip_nulls(
+            jsonb_build_object(
+                'task_type', new.task_type,
+                'priority', new.priority,
+                'previous_agent', case when tg_op = 'UPDATE' then old.assigned_agent else null end
+            )
+        )
+    );
+
+    return new;
+end;
+$$;
+
+drop trigger if exists task_status_event_trigger on public.tasks;
+
+create trigger task_status_event_trigger
+after insert or update of status on public.tasks
+for each row
+execute function public.record_task_status_event();
 """
 
 
@@ -76,19 +151,47 @@ where table_schema = 'public'
 order by ordinal_position
 """
 
+EVENT_VERIFY_SQL = """
+select column_name, data_type, is_nullable, column_default
+from information_schema.columns
+where table_schema = 'public'
+  and table_name = 'task_events'
+order by ordinal_position
+"""
+
+TRIGGER_VERIFY_SQL = """
+select exists (
+    select 1
+    from information_schema.triggers
+    where event_object_schema = 'public'
+      and event_object_table = 'tasks'
+      and trigger_name = 'task_status_event_trigger'
+)
+"""
+
 
 def main() -> None:
     with engine.begin() as connection:
         connection.execute(text(MIGRATION_SQL))
         columns = connection.execute(text(VERIFY_SQL)).mappings().all()
+        event_columns = connection.execute(text(EVENT_VERIFY_SQL)).mappings().all()
+        trigger_exists = connection.execute(text(TRIGGER_VERIFY_SQL)).scalar_one()
 
-    print("Migration completed: public.tasks multi-agent columns are present.")
-    print("Verified columns:")
+    print("Migration completed: task schema and event history are present.")
+    print("Verified public.tasks columns:")
     for column in columns:
         print(
             f"- {column['column_name']}: {column['data_type']} "
             f"nullable={column['is_nullable']} default={column['column_default']}"
         )
+
+    print("Verified public.task_events columns:")
+    for column in event_columns:
+        print(
+            f"- {column['column_name']}: {column['data_type']} "
+            f"nullable={column['is_nullable']} default={column['column_default']}"
+        )
+    print(f"Task status event trigger present: {trigger_exists}")
 
 
 if __name__ == "__main__":

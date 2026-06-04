@@ -6,6 +6,7 @@ The Python task repository is a small compatibility layer around the existing Po
 
 - `db/task_repository.py` - reusable task data access functions.
 - `scripts/list_tasks.py` - read-only task listing CLI.
+- `scripts/list_task_events.py` - read-only lifecycle event listing CLI.
 - `scripts/create_task.py` - task creation CLI.
 
 ## Current Contract
@@ -22,6 +23,9 @@ New tasks use these multi-agent fields:
 - lifecycle timestamps
 
 The legacy `job_id` field is still present in the table and model so old prototype rows remain readable.
+
+Task creation and status changes are recorded by a PostgreSQL trigger in
+`public.task_events`.
 
 ## Examples
 
@@ -41,4 +45,10 @@ Create a task:
 
 ```bash
 ./venv/bin/python scripts/create_task.py TEXT_SUMMARY --input-json '{"text":"example"}' --priority 5
+```
+
+List one task's event history:
+
+```bash
+./venv/bin/python scripts/list_task_events.py --task-id 1
 ```

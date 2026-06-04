@@ -115,6 +115,15 @@ Expected result after a successful demo:
 - completed tasks end as `COMPLETED`;
 - `result` contains the task output.
 
+Inspect recent lifecycle events:
+
+```bash
+./venv/bin/python scripts/list_task_events.py --limit 20
+```
+
+A successful task should have `CREATED`, `ASSIGNED`, `STARTED`, and `COMPLETED`
+events.
+
 ## Recovery Notes
 
 If a JADE run is interrupted, some tasks may remain `ASSIGNED` or `RUNNING`.

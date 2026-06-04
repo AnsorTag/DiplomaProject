@@ -64,6 +64,9 @@ The Java repository supports:
 - counting active tasks per executor;
 - resetting stale `ASSIGNED` and `RUNNING` tasks to `PENDING`.
 
+Task creation and status transitions are recorded atomically by the PostgreSQL
+`task_status_event_trigger` in `public.task_events`.
+
 Run the pending task check:
 
 ```bash

@@ -2,6 +2,8 @@ from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy import DateTime
+from sqlalchemy import BigInteger
+from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Text
@@ -43,3 +45,19 @@ class Task(Base):
 
     def __repr__(self) -> str:
         return f"Task(id={self.id!r}, status={self.status!r}, task_type={self.task_type!r})"
+
+
+class TaskEvent(Base):
+    __tablename__ = "task_events"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    task_id: Mapped[int] = mapped_column(ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
+    event_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    from_status: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    to_status: Mapped[str] = mapped_column(String(30), nullable=False)
+    agent_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    details: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+    def __repr__(self) -> str:
+        return f"TaskEvent(id={self.id!r}, task_id={self.task_id!r}, event_type={self.event_type!r})"

@@ -4,6 +4,8 @@ This document defines the current task contract for the multi-agent scheduler.
 
 Tasks are stored in the existing PostgreSQL `public.tasks` table. The JADE coordinator assigns pending tasks to executor agents, and executors update task status as work progresses.
 
+Lifecycle transitions are recorded in `public.task_events`.
+
 ## Task Fields
 
 Active fields:
@@ -63,6 +65,21 @@ PENDING -> CANCELLED
 ```
 
 The coordinator only assigns `PENDING` tasks. Executors should only execute tasks assigned to their own agent name.
+
+## Event History
+
+PostgreSQL records task creation and every status transition in `public.task_events`
+within the same transaction as the task change.
+
+Expected successful lifecycle events:
+
+```text
+CREATED -> ASSIGNED -> STARTED -> COMPLETED
+```
+
+Recovery records `RECOVERED` when an `ASSIGNED` or `RUNNING` task returns to
+`PENDING`. See `docs/task-events.md` for the complete event contract and inspection
+commands.
 
 ## Scheduling Rules
 
