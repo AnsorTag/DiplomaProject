@@ -20,6 +20,8 @@ New tasks use these multi-agent fields:
 - `assigned_agent`
 - `result`
 - `error`
+- `attempt_count`
+- `max_attempts`
 - lifecycle timestamps
 
 The legacy `job_id` field is still present in the table and model so old prototype rows remain readable.
@@ -44,7 +46,7 @@ List pending tasks:
 Create a task:
 
 ```bash
-./venv/bin/python scripts/create_task.py TEXT_SUMMARY --input-json '{"text":"example"}' --priority 5
+./venv/bin/python scripts/create_task.py TEXT_SUMMARY --input-json '{"text":"example"}' --priority 5 --max-attempts 2
 ```
 
 List one task's event history:

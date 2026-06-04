@@ -60,9 +60,10 @@ The Java repository supports:
 
 - loading pending tasks;
 - atomically assigning pending tasks and recording `assigned_at`;
-- marking tasks `RUNNING`, `COMPLETED`, or `FAILED`;
+- marking tasks `RUNNING` or `COMPLETED`;
+- scheduling retries or marking terminal failure after execution errors;
 - counting active tasks per executor;
-- resetting stale `ASSIGNED` and `RUNNING` tasks to `PENDING`.
+- resolving stale `ASSIGNED` and `RUNNING` tasks based on remaining attempts.
 
 Task creation and status transitions are recorded atomically by the PostgreSQL
 `task_status_event_trigger` in `public.task_events`.

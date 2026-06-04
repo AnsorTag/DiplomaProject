@@ -65,4 +65,4 @@ That starts:
 - The compose service uses `network_mode: host` so the container can reach the host PostgreSQL service through `localhost`.
 - Python task modules run inside the container through `/app/venv/bin/python`.
 - Java reads PostgreSQL through `DB_JDBC_URL`, `DB_USER`, and `DB_PASSWORD`.
-- The coordinator resets stale active tasks on startup using `STALE_TASK_MINUTES`; set it to `0` to disable recovery.
+- The coordinator resolves stale active tasks on startup using `STALE_TASK_MINUTES`; set it to `0` to disable recovery.

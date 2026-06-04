@@ -16,7 +16,9 @@ alter table public.tasks
     add column if not exists input_data jsonb,
     add column if not exists priority integer,
     add column if not exists assigned_agent varchar(100),
-    add column if not exists assigned_at timestamp with time zone;
+    add column if not exists assigned_at timestamp with time zone,
+    add column if not exists attempt_count integer,
+    add column if not exists max_attempts integer;
 
 update public.tasks
 set task_type = 'LEGACY_RQ_TASK'
@@ -31,6 +33,19 @@ set priority = 5
 where priority is null;
 
 update public.tasks
+set attempt_count = 0
+where attempt_count is null;
+
+update public.tasks
+set max_attempts = greatest(attempt_count, 1)
+where max_attempts is null;
+
+update public.tasks
+set attempt_count = 1
+where status in ('RUNNING', 'COMPLETED', 'FAILED')
+  and attempt_count = 0;
+
+update public.tasks
 set assigned_at = coalesce(started_at, created_at)
 where status in ('ASSIGNED', 'RUNNING')
   and assigned_at is null;
@@ -42,8 +57,43 @@ alter table public.tasks
     alter column input_data set default '{}'::jsonb,
     alter column priority set not null,
     alter column priority set default 5,
+    alter column attempt_count set not null,
+    alter column attempt_count set default 0,
+    alter column max_attempts set not null,
+    alter column max_attempts set default 1,
     alter column status set default 'PENDING',
     alter column created_at set default now();
+
+do $migration$
+begin
+    if not exists (
+        select 1 from pg_constraint
+        where conname = 'tasks_attempt_count_nonnegative'
+          and conrelid = 'public.tasks'::regclass
+    ) then
+        alter table public.tasks
+            add constraint tasks_attempt_count_nonnegative check (attempt_count >= 0);
+    end if;
+
+    if not exists (
+        select 1 from pg_constraint
+        where conname = 'tasks_max_attempts_positive'
+          and conrelid = 'public.tasks'::regclass
+    ) then
+        alter table public.tasks
+            add constraint tasks_max_attempts_positive check (max_attempts >= 1);
+    end if;
+
+    if not exists (
+        select 1 from pg_constraint
+        where conname = 'tasks_attempt_count_within_max'
+          and conrelid = 'public.tasks'::regclass
+    ) then
+        alter table public.tasks
+            add constraint tasks_attempt_count_within_max check (attempt_count <= max_attempts);
+    end if;
+end
+$migration$;
 
 create index if not exists idx_tasks_status
     on public.tasks (status);
@@ -87,6 +137,11 @@ begin
             when new.status = 'COMPLETED' then 'COMPLETED'
             when new.status = 'FAILED' then 'FAILED'
             when new.status = 'CANCELLED' then 'CANCELLED'
+            when new.status = 'PENDING'
+              and old.status = 'RUNNING'
+              and new.error is not null
+              and new.attempt_count < new.max_attempts
+                then 'RETRY_SCHEDULED'
             when new.status = 'PENDING' and old.status in ('ASSIGNED', 'RUNNING') then 'RECOVERED'
             else 'STATUS_CHANGED'
         end;
@@ -116,6 +171,9 @@ begin
             jsonb_build_object(
                 'task_type', new.task_type,
                 'priority', new.priority,
+                'attempt_count', new.attempt_count,
+                'max_attempts', new.max_attempts,
+                'error', new.error,
                 'previous_agent', case when tg_op = 'UPDATE' then old.assigned_agent else null end
             )
         )
@@ -145,6 +203,8 @@ where table_schema = 'public'
       'priority',
       'assigned_agent',
       'assigned_at',
+      'attempt_count',
+      'max_attempts',
       'status',
       'created_at'
   )

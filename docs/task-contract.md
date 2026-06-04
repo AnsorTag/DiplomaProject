@@ -16,6 +16,8 @@ Active fields:
 - `priority` - higher values are scheduled first.
 - `status` - lifecycle state.
 - `assigned_agent` - executor agent currently responsible for the task.
+- `attempt_count` - execution attempts already started.
+- `max_attempts` - maximum execution attempts allowed.
 - `result` - successful execution output.
 - `error` - failure or archive reason.
 - `created_at` - task creation timestamp.
@@ -58,6 +60,12 @@ Failure lifecycle:
 PENDING -> ASSIGNED -> RUNNING -> FAILED
 ```
 
+Retry lifecycle:
+
+```text
+PENDING -> ASSIGNED -> RUNNING -> PENDING
+```
+
 Archive lifecycle:
 
 ```text
@@ -65,6 +73,20 @@ PENDING -> CANCELLED
 ```
 
 The coordinator only assigns `PENDING` tasks. Executors should only execute tasks assigned to their own agent name.
+
+## Retry Rules
+
+- `attempt_count` increments when an executor marks a task `RUNNING`.
+- `max_attempts` defaults to `1`, preserving single-attempt behavior.
+- an execution failure returns the task to `PENDING` while `attempt_count < max_attempts`;
+- a failure at the attempt limit marks the task terminal `FAILED`;
+- exhausted `PENDING` tasks are not eligible for assignment.
+
+Create a retryable task with:
+
+```bash
+./venv/bin/python scripts/create_task.py UNKNOWN_TASK --max-attempts 2
+```
 
 ## Event History
 
@@ -81,6 +103,8 @@ Recovery records `RECOVERED` when an `ASSIGNED` or `RUNNING` task returns to
 `PENDING`. See `docs/task-events.md` for the complete event contract and inspection
 commands.
 
+Execution failure records `RETRY_SCHEDULED` when another attempt remains.
+
 ## Scheduling Rules
 
 The coordinator:
@@ -93,9 +117,10 @@ The coordinator:
 
 Pending tasks are ordered by priority before creation time.
 
-On startup, the coordinator resets stale `ASSIGNED` and `RUNNING` tasks to `PENDING`.
+On startup, the coordinator resolves stale `ASSIGNED` and `RUNNING` tasks.
 `ASSIGNED` age is measured from `assigned_at`; `RUNNING` age is measured from
 `started_at`. Legacy rows fall back to their available assignment or creation timestamp.
+Tasks with attempts remaining return to `PENDING`; exhausted tasks become `FAILED`.
 The threshold defaults to 30 minutes through `STALE_TASK_MINUTES`; set it to `0` to
 disable automatic recovery.
 
@@ -224,9 +249,10 @@ Result:
 
 ## Error Behavior
 
-If input validation fails, the executor marks the task `FAILED` and stores the error message in `error`.
+If input validation fails, the executor stores the error message in `error`. The task
+is retried when attempts remain, otherwise it becomes `FAILED`.
 
-If the task type is unsupported, the executor marks the task `FAILED`.
+Unsupported task types follow the same retry policy.
 
 Example:
 
@@ -240,5 +266,5 @@ error: Unsupported task type: UNKNOWN_TASK
 
 Development maintenance scripts use terminal states instead of deleting old rows:
 
-- `scripts/reset_stale_tasks.py` previews or resets stale `ASSIGNED` or `RUNNING` tasks back to `PENDING`.
+- `scripts/reset_stale_tasks.py` previews or resolves stale `ASSIGNED` or `RUNNING` tasks.
 - `scripts/archive_legacy_tasks.py` marks pending legacy `GENERIC_TASK` rows as `CANCELLED`.

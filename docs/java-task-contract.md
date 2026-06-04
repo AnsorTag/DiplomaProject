@@ -11,7 +11,7 @@ The initial Java model mirrors the current PostgreSQL `public.tasks` table after
 
 - `TaskStatus` defines the scheduler lifecycle: `PENDING`, `ASSIGNED`, `RUNNING`, `COMPLETED`, `FAILED`, `CANCELLED`.
 - `Task.inputDataJson` stores the PostgreSQL `input_data` JSONB value as text for now.
-- A real JSON library and PostgreSQL JDBC access should be added only after choosing Maven or Gradle.
+- `Task.attemptCount` and `Task.maxAttempts` define the finite retry policy.
 
 ## Build
 

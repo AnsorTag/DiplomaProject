@@ -26,6 +26,8 @@ def task_to_dict(task):
         "priority": task.priority,
         "status": task.status,
         "assigned_agent": task.assigned_agent,
+        "attempt_count": task.attempt_count,
+        "max_attempts": task.max_attempts,
         "result": task.result,
         "error": task.error,
         "created_at": normalize(task.created_at),

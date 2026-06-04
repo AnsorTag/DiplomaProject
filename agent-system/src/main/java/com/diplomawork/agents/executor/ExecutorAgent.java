@@ -4,6 +4,7 @@ import com.diplomawork.agents.db.TaskRepository;
 import com.diplomawork.agents.execution.TaskExecutionException;
 import com.diplomawork.agents.execution.TaskExecutor;
 import com.diplomawork.agents.model.Task;
+import com.diplomawork.agents.model.TaskStatus;
 
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
@@ -15,8 +16,8 @@ import java.util.Optional;
 /**
  * Minimal executor agent that receives task assignment messages.
  *
- * This version marks assigned tasks as running, executes supported task types,
- * and marks them completed with the execution result.
+ * It marks assigned tasks as running, executes supported task types, and records
+ * completion, retry, or terminal failure.
  */
 public class ExecutorAgent extends Agent {
     private final TaskExecutor taskExecutor = new TaskExecutor();
@@ -80,20 +81,24 @@ public class ExecutorAgent extends Agent {
             } catch (TaskExecutionException error) {
                 System.err.println(getLocalName() + " could not execute task " + taskId
                     + ": " + error.getMessage());
-                markFailed(repository, taskId, error.getMessage());
+                handleFailure(repository, taskId, error.getMessage());
             } catch (SQLException error) {
                 System.err.println(getLocalName() + " failed while executing task " + taskId
                     + ": " + error.getMessage());
-                markFailed(repository, taskId, error.getMessage());
+                handleFailure(repository, taskId, error.getMessage());
             }
         }
 
-        private void markFailed(TaskRepository repository, long taskId, String errorMessage) {
+        private void handleFailure(TaskRepository repository, long taskId, String errorMessage) {
             try {
-                Optional<Task> failedTask = repository.markTaskFailed(taskId, getLocalName(), errorMessage);
-                if (failedTask.isPresent()) {
-                    System.out.println(getLocalName() + " marked task failed:");
-                    System.out.println(failedTask.get());
+                Optional<Task> updatedTask = repository.handleTaskFailure(taskId, getLocalName(), errorMessage);
+                if (updatedTask.isPresent()) {
+                    if (updatedTask.get().getStatus() == TaskStatus.PENDING) {
+                        System.out.println(getLocalName() + " scheduled task retry:");
+                    } else {
+                        System.out.println(getLocalName() + " marked task failed:");
+                    }
+                    System.out.println(updatedTask.get());
                 }
             } catch (SQLException databaseError) {
                 System.err.println(getLocalName() + " could not mark task " + taskId

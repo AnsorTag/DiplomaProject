@@ -25,11 +25,15 @@ maintenance scripts, and future tools that update `public.tasks`.
 - `COMPLETED`
 - `FAILED`
 - `CANCELLED`
+- `RETRY_SCHEDULED`
 - `RECOVERED`
 - `STATUS_CHANGED` for an otherwise unrecognized status transition
 
 Existing tasks are not backfilled. Events begin after the migration installs the
 trigger.
+
+`RETRY_SCHEDULED` records an execution failure that returned the task to `PENDING`
+because another attempt remains. Its details include the error and attempt counters.
 
 ## Inspect Events
 

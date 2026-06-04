@@ -34,6 +34,8 @@ class Task(Base):
     priority: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
     status: Mapped[str] = mapped_column(String(30), default="PENDING", nullable=False)
     assigned_agent: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    attempt_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    max_attempts: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
 
     result: Mapped[str | None] = mapped_column(Text, nullable=True)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)

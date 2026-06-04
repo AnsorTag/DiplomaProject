@@ -17,7 +17,8 @@ On startup, the executor:
 5. executes supported task types;
 6. marks the task `COMPLETED` with the execution result.
 
-On failure, it attempts to mark the task `FAILED`.
+On failure, it schedules another `PENDING` attempt while attempts remain. At the
+configured attempt limit, it marks the task `FAILED`.
 
 ## Supported Task Types
 
@@ -102,6 +103,9 @@ This task is executed by the Java executor through `python_tasks/run_task.py`.
 ## Failure Path
 
 Unsupported task types are marked `FAILED`.
+
+Tasks created with `max_attempts` greater than `1` retry unsupported or invalid
+execution until the attempt limit is reached.
 
 Verified example:
 

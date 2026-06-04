@@ -26,6 +26,8 @@ public class TaskRepository {
                 task_type,
                 input_data::text as input_data_json,
                 priority,
+                attempt_count,
+                max_attempts,
                 status,
                 assigned_agent,
                 assigned_at,
@@ -36,6 +38,7 @@ public class TaskRepository {
                 finished_at
             from public.tasks
             where status = ?
+              and attempt_count < max_attempts
             order by priority desc, created_at asc
             limit ?
             """;
@@ -80,13 +83,20 @@ public class TaskRepository {
     public Optional<Task> assignPendingTask(long taskId, String agentName) throws SQLException {
         String sql = """
             update public.tasks
-            set status = ?, assigned_agent = ?, assigned_at = now()
-            where id = ? and status = ?
+            set status = ?,
+                assigned_agent = ?,
+                assigned_at = now(),
+                result = null,
+                error = null,
+                finished_at = null
+            where id = ? and status = ? and attempt_count < max_attempts
             returning
                 id,
                 task_type,
                 input_data::text as input_data_json,
                 priority,
+                attempt_count,
+                max_attempts,
                 status,
                 assigned_agent,
                 assigned_at,
@@ -116,13 +126,15 @@ public class TaskRepository {
     public Optional<Task> markTaskRunning(long taskId, String agentName) throws SQLException {
         String sql = """
             update public.tasks
-            set status = ?, started_at = now()
-            where id = ? and assigned_agent = ? and status = ?
+            set status = ?, started_at = now(), attempt_count = attempt_count + 1
+            where id = ? and assigned_agent = ? and status = ? and attempt_count < max_attempts
             returning
                 id,
                 task_type,
                 input_data::text as input_data_json,
                 priority,
+                attempt_count,
+                max_attempts,
                 status,
                 assigned_agent,
                 assigned_at,
@@ -159,6 +171,8 @@ public class TaskRepository {
                 task_type,
                 input_data::text as input_data_json,
                 priority,
+                attempt_count,
+                max_attempts,
                 status,
                 assigned_agent,
                 assigned_at,
@@ -186,34 +200,51 @@ public class TaskRepository {
         }
     }
 
-    public Optional<Task> markTaskFailed(long taskId, String agentName, String error) throws SQLException {
+    public Optional<Task> handleTaskFailure(long taskId, String agentName, String error) throws SQLException {
         String sql = """
-            update public.tasks
-            set status = ?, error = ?, finished_at = now()
-            where id = ? and assigned_agent = ? and status in (?, ?)
+            with target as (
+                select id, status = ? and attempt_count < max_attempts as should_retry
+                from public.tasks
+                where id = ? and assigned_agent = ? and status in (?, ?)
+                for update
+            )
+            update public.tasks as task
+            set status = case when target.should_retry then ? else ? end,
+                assigned_agent = case when target.should_retry then null else task.assigned_agent end,
+                assigned_at = case when target.should_retry then null else task.assigned_at end,
+                started_at = case when target.should_retry then null else task.started_at end,
+                finished_at = case when target.should_retry then null else now() end,
+                result = null,
+                error = ?
+            from target
+            where task.id = target.id
             returning
-                id,
-                task_type,
-                input_data::text as input_data_json,
-                priority,
-                status,
-                assigned_agent,
-                assigned_at,
-                result,
-                error,
-                created_at,
-                started_at,
-                finished_at
+                task.id,
+                task.task_type,
+                task.input_data::text as input_data_json,
+                task.priority,
+                task.attempt_count,
+                task.max_attempts,
+                task.status,
+                task.assigned_agent,
+                task.assigned_at,
+                task.result,
+                task.error,
+                task.created_at,
+                task.started_at,
+                task.finished_at
             """;
 
         try (Connection connection = openConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, TaskStatus.FAILED.name());
-            statement.setString(2, error);
-            statement.setLong(3, taskId);
-            statement.setString(4, agentName);
-            statement.setString(5, TaskStatus.ASSIGNED.name());
-            statement.setString(6, TaskStatus.RUNNING.name());
+            statement.setString(1, TaskStatus.RUNNING.name());
+            statement.setLong(2, taskId);
+            statement.setString(3, agentName);
+            statement.setString(4, TaskStatus.ASSIGNED.name());
+            statement.setString(5, TaskStatus.RUNNING.name());
+            statement.setString(6, TaskStatus.PENDING.name());
+            statement.setString(7, TaskStatus.FAILED.name());
+            statement.setString(8, error);
 
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (!resultSet.next()) {
@@ -224,16 +255,19 @@ public class TaskRepository {
         }
     }
 
-    public int resetStaleTasks(int staleMinutes) throws SQLException {
+    public int resolveStaleTasks(int staleMinutes) throws SQLException {
         String sql = """
             update public.tasks
-            set status = ?,
-                assigned_agent = null,
-                assigned_at = null,
-                started_at = null,
-                finished_at = null,
+            set status = case when attempt_count < max_attempts then ? else ? end,
+                assigned_agent = case when attempt_count < max_attempts then null else assigned_agent end,
+                assigned_at = case when attempt_count < max_attempts then null else assigned_at end,
+                started_at = case when attempt_count < max_attempts then null else started_at end,
+                finished_at = case when attempt_count < max_attempts then null else now() end,
                 result = null,
-                error = null
+                error = case
+                    when attempt_count < max_attempts then null
+                    else 'Stale task exhausted maximum attempts'
+                end
             where (
                 status = ?
                 and coalesce(assigned_at, created_at) < now() - (? * interval '1 minute')
@@ -246,10 +280,11 @@ public class TaskRepository {
         try (Connection connection = openConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, TaskStatus.PENDING.name());
-            statement.setString(2, TaskStatus.ASSIGNED.name());
-            statement.setInt(3, staleMinutes);
-            statement.setString(4, TaskStatus.RUNNING.name());
-            statement.setInt(5, staleMinutes);
+            statement.setString(2, TaskStatus.FAILED.name());
+            statement.setString(3, TaskStatus.ASSIGNED.name());
+            statement.setInt(4, staleMinutes);
+            statement.setString(5, TaskStatus.RUNNING.name());
+            statement.setInt(6, staleMinutes);
             return statement.executeUpdate();
         }
     }
@@ -268,6 +303,8 @@ public class TaskRepository {
         task.setTaskType(resultSet.getString("task_type"));
         task.setInputDataJson(resultSet.getString("input_data_json"));
         task.setPriority(resultSet.getInt("priority"));
+        task.setAttemptCount(resultSet.getInt("attempt_count"));
+        task.setMaxAttempts(resultSet.getInt("max_attempts"));
         task.setStatus(TaskStatus.valueOf(resultSet.getString("status")));
         task.setAssignedAgent(resultSet.getString("assigned_agent"));
         task.setAssignedAt(toOffsetDateTime(resultSet.getTimestamp("assigned_at")));

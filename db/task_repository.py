@@ -16,12 +16,17 @@ def create_task(
     task_type: str,
     input_data: dict[str, Any] | None = None,
     priority: int = 5,
+    max_attempts: int = 1,
 ) -> Task:
+    if max_attempts <= 0:
+        raise ValueError("max_attempts must be positive")
+
     task = Task(
         task_type=task_type,
         input_data=input_data or {},
         priority=priority,
         status=DEFAULT_TASK_STATUS,
+        max_attempts=max_attempts,
     )
     db.add(task)
     db.commit()
@@ -46,11 +51,14 @@ def list_tasks(
 
 def assign_task(db: Session, task_id: int, agent_name: str) -> Task | None:
     task = get_task(db, task_id)
-    if task is None:
+    if task is None or task.status != DEFAULT_TASK_STATUS or task.attempt_count >= task.max_attempts:
         return None
 
     task.assigned_agent = agent_name
     task.assigned_at = utc_now()
+    task.result = None
+    task.error = None
+    task.finished_at = None
     task.status = ASSIGNED_TASK_STATUS
     db.commit()
     db.refresh(task)

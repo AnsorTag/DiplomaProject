@@ -49,35 +49,46 @@ def print_tasks(tasks) -> None:
         return
 
     print("Stale tasks:")
-    print("ID    STATUS     TYPE            AGENT         ASSIGNED                        STARTED")
-    print("------------------------------------------------------------------------------------------")
+    print("ID    STATUS     TYPE            ATTEMPT  AGENT         ASSIGNED                        STARTED")
+    print("---------------------------------------------------------------------------------------------------")
     for task in tasks:
         print(
             f"{task.id:<5} "
             f"{task.status:<10} "
             f"{task.task_type:<15} "
+            f"{f'{task.attempt_count}/{task.max_attempts}':<8} "
             f"{str(task.assigned_agent or '-'):<13} "
             f"{format_time(task.assigned_at):<31} "
             f"{format_time(task.started_at)}"
         )
 
 
-def reset_tasks(session, tasks) -> None:
+def resolve_tasks(session, tasks) -> tuple[int, int]:
+    recovered = 0
+    failed = 0
     for task in tasks:
-        task.status = "PENDING"
-        task.assigned_agent = None
-        task.assigned_at = None
-        task.started_at = None
-        task.finished_at = None
-        task.result = None
-        task.error = None
+        if task.attempt_count < task.max_attempts:
+            task.status = "PENDING"
+            task.assigned_agent = None
+            task.assigned_at = None
+            task.started_at = None
+            task.finished_at = None
+            task.result = None
+            task.error = None
+            recovered += 1
+        else:
+            task.status = "FAILED"
+            task.finished_at = datetime.now(timezone.utc)
+            task.error = "Stale task exhausted maximum attempts"
+            failed += 1
     session.commit()
+    return recovered, failed
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Reset stale ASSIGNED/RUNNING tasks back to PENDING.")
+    parser = argparse.ArgumentParser(description="Resolve stale ASSIGNED/RUNNING tasks.")
     parser.add_argument("--minutes", type=int, default=30, help="Minimum age in minutes before a task is stale.")
-    parser.add_argument("--apply", action="store_true", help="Apply the reset. Without this flag, only prints matches.")
+    parser.add_argument("--apply", action="store_true", help="Apply resolution. Without this flag, only prints matches.")
     args = parser.parse_args()
 
     if args.minutes <= 0:
@@ -94,12 +105,13 @@ def main() -> None:
 
         if not args.apply:
             print()
-            print("Dry run only. Re-run with --apply to reset these tasks to PENDING.")
+            print("Dry run only. Re-run with --apply to recover or fail these stale tasks.")
             return
 
-        reset_tasks(session, tasks)
+        recovered, failed = resolve_tasks(session, tasks)
         print()
-        print(f"Reset {len(tasks)} task(s) to PENDING.")
+        print(f"Recovered {recovered} task(s) to PENDING.")
+        print(f"Marked {failed} exhausted task(s) FAILED.")
 
 
 if __name__ == "__main__":

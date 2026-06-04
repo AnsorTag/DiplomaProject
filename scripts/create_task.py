@@ -20,11 +20,19 @@ def main() -> None:
         help="Task input as a JSON object. Defaults to an empty object.",
     )
     parser.add_argument("--priority", type=int, default=5, help="Task priority. Higher is more important.")
+    parser.add_argument(
+        "--max-attempts",
+        type=int,
+        default=1,
+        help="Maximum execution attempts before terminal failure.",
+    )
     args = parser.parse_args()
 
     input_data = json.loads(args.input_json)
     if not isinstance(input_data, dict):
         raise ValueError("--input-json must be a JSON object")
+    if args.max_attempts <= 0:
+        raise ValueError("--max-attempts must be positive")
 
     db = SessionLocal()
     try:
@@ -33,8 +41,9 @@ def main() -> None:
             task_type=args.task_type,
             input_data=input_data,
             priority=args.priority,
+            max_attempts=args.max_attempts,
         )
-        print(f"Created task {task.id} with status {task.status}")
+        print(f"Created task {task.id} with status {task.status} and max_attempts {task.max_attempts}")
     finally:
         db.close()
 

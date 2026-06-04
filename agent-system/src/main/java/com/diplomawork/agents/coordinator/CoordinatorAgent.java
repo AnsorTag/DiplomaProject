@@ -91,8 +91,8 @@ public class CoordinatorAgent extends Agent {
         }
 
         try {
-            int recoveredTasks = new TaskRepository().resetStaleTasks(staleMinutes);
-            System.out.println(getLocalName() + " recovered stale tasks: " + recoveredTasks
+            int resolvedTasks = new TaskRepository().resolveStaleTasks(staleMinutes);
+            System.out.println(getLocalName() + " resolved stale tasks: " + resolvedTasks
                 + " using threshold minutes: " + staleMinutes);
         } catch (SQLException error) {
             System.err.println(getLocalName() + " failed during stale task recovery: " + error.getMessage());

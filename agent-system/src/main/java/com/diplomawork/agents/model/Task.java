@@ -13,6 +13,8 @@ public class Task {
     private String taskType;
     private String inputDataJson;
     private int priority;
+    private int attemptCount;
+    private int maxAttempts;
     private TaskStatus status;
     private String assignedAgent;
     private String result;
@@ -55,6 +57,22 @@ public class Task {
 
     public void setPriority(int priority) {
         this.priority = priority;
+    }
+
+    public int getAttemptCount() {
+        return attemptCount;
+    }
+
+    public void setAttemptCount(int attemptCount) {
+        this.attemptCount = attemptCount;
+    }
+
+    public int getMaxAttempts() {
+        return maxAttempts;
+    }
+
+    public void setMaxAttempts(int maxAttempts) {
+        this.maxAttempts = maxAttempts;
     }
 
     public TaskStatus getStatus() {
@@ -127,6 +145,7 @@ public class Task {
             "id=" + id +
             ", taskType='" + taskType + "'" +
             ", priority=" + priority +
+            ", attempts=" + attemptCount + "/" + maxAttempts +
             ", status=" + status +
             ", assignedAgent='" + assignedAgent + "'" +
             "}";

@@ -53,8 +53,9 @@ Apply:
 ./venv/bin/python scripts/reset_stale_tasks.py --minutes 30 --apply
 ```
 
-This resets stale `ASSIGNED` or `RUNNING` tasks back to `PENDING`. `ASSIGNED` age is
-measured from `assigned_at`; `RUNNING` age is measured from `started_at`.
+This resolves stale `ASSIGNED` or `RUNNING` tasks. Tasks with attempts remaining
+return to `PENDING`; exhausted tasks become `FAILED`. `ASSIGNED` age is measured
+from `assigned_at`; `RUNNING` age is measured from `started_at`.
 
 ## 4. Create Demo Tasks
 
