@@ -11,8 +11,12 @@ The JADE coordinator periodically schedules pending tasks and notifies the selec
 On startup, the agent:
 
 1. prints its local JADE agent name;
-2. performs one immediate scheduling attempt;
-3. starts a `TickerBehaviour` that repeats scheduling every 2 seconds.
+2. resets stale `ASSIGNED` and `RUNNING` tasks to `PENDING`;
+3. performs one immediate scheduling attempt;
+4. starts a `TickerBehaviour` that repeats scheduling every 2 seconds.
+
+Startup recovery defaults to tasks older than 30 minutes. Configure the threshold with
+`STALE_TASK_MINUTES`, or set it to `0` to disable automatic recovery.
 
 On each scheduling attempt, the agent:
 

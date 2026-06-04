@@ -19,6 +19,7 @@ DB_JDBC_URL=jdbc:postgresql://localhost:5432/tasks
 DATABASE_URL=postgresql://DB_USER:DB_PASSWORD@localhost:5432/tasks
 DB_USER=postgres
 DB_PASSWORD=your_db_password
+STALE_TASK_MINUTES=30
 ```
 
 This matches the existing local development defaults and works when PostgreSQL is already available on the host at `localhost:5432`.
@@ -64,3 +65,4 @@ That starts:
 - The compose service uses `network_mode: host` so the container can reach the host PostgreSQL service through `localhost`.
 - Python task modules run inside the container through `/app/venv/bin/python`.
 - Java reads PostgreSQL through `DB_JDBC_URL`, `DB_USER`, and `DB_PASSWORD`.
+- The coordinator resets stale active tasks on startup using `STALE_TASK_MINUTES`; set it to `0` to disable recovery.

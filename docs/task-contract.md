@@ -17,6 +17,7 @@ Active fields:
 - `result` - successful execution output.
 - `error` - failure or archive reason.
 - `created_at` - task creation timestamp.
+- `assigned_at` - most recent assignment timestamp.
 - `started_at` - execution start timestamp.
 - `finished_at` - terminal-state timestamp.
 
@@ -74,6 +75,12 @@ The coordinator:
 5. sends a JADE `REQUEST` message with conversation id `task-assignment`.
 
 Pending tasks are ordered by priority before creation time.
+
+On startup, the coordinator resets stale `ASSIGNED` and `RUNNING` tasks to `PENDING`.
+`ASSIGNED` age is measured from `assigned_at`; `RUNNING` age is measured from
+`started_at`. Legacy rows fall back to their available assignment or creation timestamp.
+The threshold defaults to 30 minutes through `STALE_TASK_MINUTES`; set it to `0` to
+disable automatic recovery.
 
 ## Supported Task Types
 
@@ -216,5 +223,5 @@ error: Unsupported task type: UNKNOWN_TASK
 
 Development maintenance scripts use terminal states instead of deleting old rows:
 
-- `scripts/reset_stale_tasks.py` resets stale `ASSIGNED` or `RUNNING` tasks back to `PENDING`.
+- `scripts/reset_stale_tasks.py` previews or resets stale `ASSIGNED` or `RUNNING` tasks back to `PENDING`.
 - `scripts/archive_legacy_tasks.py` marks pending legacy `GENERIC_TASK` rows as `CANCELLED`.

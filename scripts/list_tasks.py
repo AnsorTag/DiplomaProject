@@ -29,6 +29,7 @@ def task_to_dict(task):
         "result": task.result,
         "error": task.error,
         "created_at": normalize(task.created_at),
+        "assigned_at": normalize(task.assigned_at),
         "started_at": normalize(task.started_at),
         "finished_at": normalize(task.finished_at),
     }

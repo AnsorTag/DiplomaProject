@@ -28,6 +28,7 @@ public class TaskRepository {
                 priority,
                 status,
                 assigned_agent,
+                assigned_at,
                 result,
                 error,
                 created_at,
@@ -79,7 +80,7 @@ public class TaskRepository {
     public Optional<Task> assignPendingTask(long taskId, String agentName) throws SQLException {
         String sql = """
             update public.tasks
-            set status = ?, assigned_agent = ?
+            set status = ?, assigned_agent = ?, assigned_at = now()
             where id = ? and status = ?
             returning
                 id,
@@ -88,6 +89,7 @@ public class TaskRepository {
                 priority,
                 status,
                 assigned_agent,
+                assigned_at,
                 result,
                 error,
                 created_at,
@@ -123,6 +125,7 @@ public class TaskRepository {
                 priority,
                 status,
                 assigned_agent,
+                assigned_at,
                 result,
                 error,
                 created_at,
@@ -158,6 +161,7 @@ public class TaskRepository {
                 priority,
                 status,
                 assigned_agent,
+                assigned_at,
                 result,
                 error,
                 created_at,
@@ -194,6 +198,7 @@ public class TaskRepository {
                 priority,
                 status,
                 assigned_agent,
+                assigned_at,
                 result,
                 error,
                 created_at,
@@ -219,6 +224,36 @@ public class TaskRepository {
         }
     }
 
+    public int resetStaleTasks(int staleMinutes) throws SQLException {
+        String sql = """
+            update public.tasks
+            set status = ?,
+                assigned_agent = null,
+                assigned_at = null,
+                started_at = null,
+                finished_at = null,
+                result = null,
+                error = null
+            where (
+                status = ?
+                and coalesce(assigned_at, created_at) < now() - (? * interval '1 minute')
+            ) or (
+                status = ?
+                and coalesce(started_at, assigned_at, created_at) < now() - (? * interval '1 minute')
+            )
+            """;
+
+        try (Connection connection = openConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, TaskStatus.PENDING.name());
+            statement.setString(2, TaskStatus.ASSIGNED.name());
+            statement.setInt(3, staleMinutes);
+            statement.setString(4, TaskStatus.RUNNING.name());
+            statement.setInt(5, staleMinutes);
+            return statement.executeUpdate();
+        }
+    }
+
     private Connection openConnection() throws SQLException {
         return DriverManager.getConnection(
             DatabaseConfig.jdbcUrl(),
@@ -235,6 +270,7 @@ public class TaskRepository {
         task.setPriority(resultSet.getInt("priority"));
         task.setStatus(TaskStatus.valueOf(resultSet.getString("status")));
         task.setAssignedAgent(resultSet.getString("assigned_agent"));
+        task.setAssignedAt(toOffsetDateTime(resultSet.getTimestamp("assigned_at")));
         task.setResult(resultSet.getString("result"));
         task.setError(resultSet.getString("error"));
         task.setCreatedAt(toOffsetDateTime(resultSet.getTimestamp("created_at")));

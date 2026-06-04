@@ -18,6 +18,7 @@ public class Task {
     private String result;
     private String error;
     private OffsetDateTime createdAt;
+    private OffsetDateTime assignedAt;
     private OffsetDateTime startedAt;
     private OffsetDateTime finishedAt;
 
@@ -94,6 +95,14 @@ public class Task {
 
     public void setCreatedAt(OffsetDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public OffsetDateTime getAssignedAt() {
+        return assignedAt;
+    }
+
+    public void setAssignedAt(OffsetDateTime assignedAt) {
+        this.assignedAt = assignedAt;
     }
 
     public OffsetDateTime getStartedAt() {

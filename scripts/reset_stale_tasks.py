@@ -3,7 +3,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from sqlalchemy import or_, select
+from sqlalchemy import and_, func, or_, select
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -13,9 +13,6 @@ from db.database import SessionLocal
 from db.models import Task
 
 
-STALE_STATUSES = ("ASSIGNED", "RUNNING")
-
-
 def stale_cutoff(minutes: int) -> datetime:
     return datetime.now(timezone.utc) - timedelta(minutes=minutes)
 
@@ -23,8 +20,18 @@ def stale_cutoff(minutes: int) -> datetime:
 def find_stale_tasks(session, cutoff: datetime):
     statement = (
         select(Task)
-        .where(Task.status.in_(STALE_STATUSES))
-        .where(or_(Task.started_at.is_(None), Task.started_at < cutoff))
+        .where(
+            or_(
+                and_(
+                    Task.status == "ASSIGNED",
+                    func.coalesce(Task.assigned_at, Task.created_at) < cutoff,
+                ),
+                and_(
+                    Task.status == "RUNNING",
+                    func.coalesce(Task.started_at, Task.assigned_at, Task.created_at) < cutoff,
+                ),
+            )
+        )
         .order_by(Task.created_at.asc(), Task.id.asc())
     )
     return session.execute(statement).scalars().all()
@@ -42,7 +49,7 @@ def print_tasks(tasks) -> None:
         return
 
     print("Stale tasks:")
-    print("ID    STATUS     TYPE            AGENT         CREATED                         STARTED")
+    print("ID    STATUS     TYPE            AGENT         ASSIGNED                        STARTED")
     print("------------------------------------------------------------------------------------------")
     for task in tasks:
         print(
@@ -50,7 +57,7 @@ def print_tasks(tasks) -> None:
             f"{task.status:<10} "
             f"{task.task_type:<15} "
             f"{str(task.assigned_agent or '-'):<13} "
-            f"{format_time(task.created_at):<31} "
+            f"{format_time(task.assigned_at):<31} "
             f"{format_time(task.started_at)}"
         )
 
@@ -59,7 +66,10 @@ def reset_tasks(session, tasks) -> None:
     for task in tasks:
         task.status = "PENDING"
         task.assigned_agent = None
+        task.assigned_at = None
         task.started_at = None
+        task.finished_at = None
+        task.result = None
         task.error = None
     session.commit()
 
@@ -76,7 +86,7 @@ def main() -> None:
     cutoff = stale_cutoff(args.minutes)
     with SessionLocal() as session:
         tasks = find_stale_tasks(session, cutoff)
-        print(f"Cutoff: started before {cutoff.isoformat()} or never started")
+        print(f"Cutoff: active timestamp before {cutoff.isoformat()}")
         print_tasks(tasks)
 
         if not tasks:

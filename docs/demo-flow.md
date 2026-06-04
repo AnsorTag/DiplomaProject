@@ -9,6 +9,12 @@ It assumes:
 - The Python virtual environment exists at `venv/`.
 - Java and Maven are installed.
 
+After pulling schema-related changes, run the idempotent migration:
+
+```bash
+./venv/bin/python scripts/migrate_tasks_multi_agent.py
+```
+
 ## 1. Check the Current Queue
 
 ```bash
@@ -47,7 +53,8 @@ Apply:
 ./venv/bin/python scripts/reset_stale_tasks.py --minutes 30 --apply
 ```
 
-This resets stale `ASSIGNED` or `RUNNING` tasks back to `PENDING`.
+This resets stale `ASSIGNED` or `RUNNING` tasks back to `PENDING`. `ASSIGNED` age is
+measured from `assigned_at`; `RUNNING` age is measured from `started_at`.
 
 ## 4. Create Demo Tasks
 
@@ -84,6 +91,8 @@ The script starts:
 - `coordinator`
 
 The coordinator polls PostgreSQL, assigns pending tasks, and sends JADE assignment messages to executors.
+It also performs one automatic stale-task recovery pass on startup using
+`STALE_TASK_MINUTES`, which defaults to 30.
 
 ## 6. Monitor Results
 

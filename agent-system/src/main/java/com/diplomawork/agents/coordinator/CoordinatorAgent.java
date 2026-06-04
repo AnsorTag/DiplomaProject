@@ -22,13 +22,16 @@ import java.util.Optional;
  */
 public class CoordinatorAgent extends Agent {
     private static final int DEFAULT_TASK_LIMIT = 10;
+    private static final int DEFAULT_STALE_TASK_MINUTES = 30;
     private static final long SCHEDULING_INTERVAL_MILLIS = 2000L;
     private static final String DEFAULT_EXECUTOR_AGENT_NAME = "executor";
+    private static final String STALE_TASK_MINUTES_ENV = "STALE_TASK_MINUTES";
 
     @Override
     protected void setup() {
         System.out.println(getLocalName() + " started.");
         System.out.println(getLocalName() + " scheduling interval ms: " + SCHEDULING_INTERVAL_MILLIS);
+        recoverStaleTasks();
         assignOnePendingTask();
         addBehaviour(new SchedulingBehaviour(this, SCHEDULING_INTERVAL_MILLIS));
     }
@@ -77,6 +80,42 @@ public class CoordinatorAgent extends Agent {
         } catch (SQLException error) {
             System.err.println(getLocalName() + " failed during scheduling: " + error.getMessage());
             error.printStackTrace(System.err);
+        }
+    }
+
+    private void recoverStaleTasks() {
+        int staleMinutes = configuredStaleTaskMinutes();
+        if (staleMinutes == 0) {
+            System.out.println(getLocalName() + " stale task recovery is disabled.");
+            return;
+        }
+
+        try {
+            int recoveredTasks = new TaskRepository().resetStaleTasks(staleMinutes);
+            System.out.println(getLocalName() + " recovered stale tasks: " + recoveredTasks
+                + " using threshold minutes: " + staleMinutes);
+        } catch (SQLException error) {
+            System.err.println(getLocalName() + " failed during stale task recovery: " + error.getMessage());
+            error.printStackTrace(System.err);
+        }
+    }
+
+    private int configuredStaleTaskMinutes() {
+        String configuredValue = System.getenv(STALE_TASK_MINUTES_ENV);
+        if (configuredValue == null || configuredValue.isBlank()) {
+            return DEFAULT_STALE_TASK_MINUTES;
+        }
+
+        try {
+            int value = Integer.parseInt(configuredValue);
+            if (value < 0) {
+                throw new NumberFormatException("value must not be negative");
+            }
+            return value;
+        } catch (NumberFormatException error) {
+            System.err.println(getLocalName() + " invalid " + STALE_TASK_MINUTES_ENV
+                + " value '" + configuredValue + "'; using " + DEFAULT_STALE_TASK_MINUTES + ".");
+            return DEFAULT_STALE_TASK_MINUTES;
         }
     }
 

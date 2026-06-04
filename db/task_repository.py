@@ -4,7 +4,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from db.models import Task
+from db.models import Task, utc_now
 
 
 DEFAULT_TASK_STATUS = "PENDING"
@@ -50,6 +50,7 @@ def assign_task(db: Session, task_id: int, agent_name: str) -> Task | None:
         return None
 
     task.assigned_agent = agent_name
+    task.assigned_at = utc_now()
     task.status = ASSIGNED_TASK_STATUS
     db.commit()
     db.refresh(task)

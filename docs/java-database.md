@@ -1,6 +1,6 @@
 # Java Database Access
 
-The Java agent layer now has a minimal JDBC connection check for the existing PostgreSQL server.
+The Java agent layer uses JDBC to schedule, execute, and recover tasks in the existing PostgreSQL server.
 
 ## Files
 
@@ -10,20 +10,27 @@ The Java agent layer now has a minimal JDBC connection check for the existing Po
 
 ## Configuration
 
-The Java defaults match the existing local PostgreSQL setup:
+The Java default connection target is:
 
 ```text
 jdbc:postgresql://localhost:5432/tasks
-postgres / postgres
 ```
 
-Optional environment variables:
+Configure credentials through environment variables or the ignored root `.env` file:
 
 ```text
 DB_JDBC_URL
 DB_USER
 DB_PASSWORD
 ```
+
+The coordinator recovery threshold is configured separately:
+
+```text
+STALE_TASK_MINUTES
+```
+
+It defaults to `30`; set it to `0` to disable automatic stale-task recovery.
 
 ## Commands
 
@@ -41,12 +48,21 @@ cd agent-system
 mvn exec:java -Dexec.mainClass=com.diplomawork.agents.db.DatabaseConnectionCheck
 ```
 
+Apply the idempotent task schema migration after pulling schema-related changes:
+
+```bash
+./venv/bin/python scripts/migrate_tasks_multi_agent.py
+```
+
 ## Task Repository
 
-The Java repository currently supports read-only loading of pending tasks:
+The Java repository supports:
 
-- `TaskRepository.findPendingTasks(limit)`
-- `PendingTasksCheck` CLI for verification
+- loading pending tasks;
+- atomically assigning pending tasks and recording `assigned_at`;
+- marking tasks `RUNNING`, `COMPLETED`, or `FAILED`;
+- counting active tasks per executor;
+- resetting stale `ASSIGNED` and `RUNNING` tasks to `PENDING`.
 
 Run the pending task check:
 

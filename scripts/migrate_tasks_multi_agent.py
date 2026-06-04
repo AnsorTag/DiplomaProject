@@ -15,7 +15,8 @@ alter table public.tasks
     add column if not exists task_type varchar(100),
     add column if not exists input_data jsonb,
     add column if not exists priority integer,
-    add column if not exists assigned_agent varchar(100);
+    add column if not exists assigned_agent varchar(100),
+    add column if not exists assigned_at timestamp with time zone;
 
 update public.tasks
 set task_type = 'LEGACY_RQ_TASK'
@@ -28,6 +29,11 @@ where input_data is null;
 update public.tasks
 set priority = 5
 where priority is null;
+
+update public.tasks
+set assigned_at = coalesce(started_at, created_at)
+where status in ('ASSIGNED', 'RUNNING')
+  and assigned_at is null;
 
 alter table public.tasks
     alter column task_type set not null,
@@ -47,6 +53,9 @@ create index if not exists idx_tasks_priority
 
 create index if not exists idx_tasks_assigned_agent
     on public.tasks (assigned_agent);
+
+create index if not exists idx_tasks_assigned_at
+    on public.tasks (assigned_at);
 """
 
 
@@ -55,7 +64,15 @@ select column_name, data_type, is_nullable, column_default
 from information_schema.columns
 where table_schema = 'public'
   and table_name = 'tasks'
-  and column_name in ('task_type', 'input_data', 'priority', 'assigned_agent', 'status', 'created_at')
+  and column_name in (
+      'task_type',
+      'input_data',
+      'priority',
+      'assigned_agent',
+      'assigned_at',
+      'status',
+      'created_at'
+  )
 order by ordinal_position
 """
 
