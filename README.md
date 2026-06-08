@@ -23,6 +23,7 @@ JADE Coordinator -> JADE Executor Agents -> Java task execution
 - `db/` - Python SQLAlchemy models and task repository helpers.
 - `python_tasks/` - Python-backed task execution modules.
 - `scripts/` - migration, monitoring, demo, maintenance, and test commands.
+- `web/` - optional FastAPI web dashboard for demos and screenshots.
 - `docs/` - detailed contracts and component documentation.
 - `archive/` - archived files from the previous project direction.
 
@@ -188,6 +189,16 @@ Monitor tasks and inspect lifecycle events:
 ./venv/bin/python scripts/list_task_events.py --limit 20
 ```
 
+Run the optional web dashboard:
+
+```bash
+scripts/run_web.sh
+```
+
+Open `http://127.0.0.1:8000`. The dashboard reads the same PostgreSQL task
+schema, creates new tasks, and shows lifecycle events. It does not schedule or
+execute tasks; JADE agents remain responsible for that.
+
 ## Supported Task Types
 
 | Task type | Runtime | Purpose |
@@ -280,4 +291,5 @@ These commands preserve task history instead of deleting normal project data.
 - [JADE executor](docs/jade-executor.md)
 - [Java database access](docs/java-database.md)
 - [Python task modules](docs/python-task-modules.md)
+- [Web dashboard](docs/web-dashboard.md)
 - [Docker setup](docs/docker.md)

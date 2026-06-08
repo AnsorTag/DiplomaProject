@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Create Task | Agent Console{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <p class="eyebrow">Manual enqueue</p>
+        <h1>Create task</h1>
+    </div>
+    <a class="button secondary" href="/tasks">Back to queue</a>
+</section>
+
+{% if error %}
+<div class="notice error">{{ error }}</div>
+{% endif %}
+
+<form class="task-form" method="post" action="/tasks">
+    <label>
+        Task type
+        <select name="task_type">
+            {% for task_type in task_types %}
+            <option value="{{ task_type }}" {{ 'selected' if selected_type == task_type else '' }}>{{ task_type }}</option>
+            {% endfor %}
+        </select>
+    </label>
+
+    <div class="form-row">
+        <label>
+            Priority
+            <input type="number" name="priority" value="{{ priority }}">
+        </label>
+        <label>
+            Max attempts
+            <input type="number" name="max_attempts" min="1" value="{{ max_attempts }}">
+        </label>
+    </div>
+
+    <label>
+        Input JSON
+        <textarea name="input_json" rows="12" spellcheck="false">{{ input_json }}</textarea>
+    </label>
+
+    <button type="submit">Create task</button>
+</form>
+{% endblock %}

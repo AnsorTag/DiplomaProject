@@ -1,0 +1,35 @@
+{% set table_tasks = tasks if tasks is defined else recent_tasks %}
+{% if table_tasks %}
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Attempts</th>
+                <th>Agent</th>
+                <th>Created</th>
+                <th>Outcome</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in table_tasks %}
+            <tr>
+                <td><a href="/tasks/{{ task.id }}">#{{ task.id }}</a></td>
+                <td>{{ task.task_type }}</td>
+                <td><span class="status-pill status-{{ task.status|lower }}">{{ task.status }}</span></td>
+                <td>{{ task.priority }}</td>
+                <td>{{ task.attempt_count }}/{{ task.max_attempts }}</td>
+                <td>{{ task.assigned_agent or "-" }}</td>
+                <td>{{ task.created_at|datetime }}</td>
+                <td>{{ (task.error or task.result)|short(80) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="empty">No tasks match the current view.</p>
+{% endif %}

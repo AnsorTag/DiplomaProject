@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Agent Console{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <p class="eyebrow">Live PostgreSQL view</p>
+        <h1>Multi-agent task dashboard</h1>
+    </div>
+    <a class="button secondary" href="/tasks">View queue</a>
+</section>
+
+<section class="metric-grid" aria-label="Task status counts">
+    {% for status in status_order %}
+    <article class="metric status-{{ status|lower }}">
+        <span>{{ status }}</span>
+        <strong>{{ counts.get(status, 0) }}</strong>
+    </article>
+    {% endfor %}
+</section>
+
+<section class="split-layout">
+    <div class="panel">
+        <div class="panel-heading">
+            <h2>Active workloads</h2>
+        </div>
+        {% if active_workloads %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Executor</th>
+                    <th>Assigned</th>
+                    <th>Running</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for workload in active_workloads %}
+                <tr>
+                    <td>{{ workload.agent_name }}</td>
+                    <td>{{ workload.ASSIGNED }}</td>
+                    <td>{{ workload.RUNNING }}</td>
+                    <td>{{ workload.total }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty">No executor has active work right now.</p>
+        {% endif %}
+    </div>
+
+    <div class="panel">
+        <div class="panel-heading">
+            <h2>Recent lifecycle events</h2>
+        </div>
+        {% if recent_events %}
+        <ol class="event-list">
+            {% for event in recent_events %}
+            <li>
+                <span class="event-type">{{ event.event_type }}</span>
+                <a href="/tasks/{{ event.task_id }}">Task {{ event.task_id }}</a>
+                <small>{{ event.created_at|datetime }}</small>
+            </li>
+            {% endfor %}
+        </ol>
+        {% else %}
+        <p class="empty">No lifecycle events recorded yet.</p>
+        {% endif %}
+    </div>
+</section>
+
+<section class="panel">
+    <div class="panel-heading">
+        <h2>Recent tasks</h2>
+        <a href="/tasks">Open full queue</a>
+    </div>
+    {% include "_task_table.html" with context %}
+</section>
+{% endblock %}

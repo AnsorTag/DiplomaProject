@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Agent Dashboard{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar" aria-label="Main navigation">
+            <a class="brand" href="/">
+                <span class="brand-mark">DW</span>
+                <span>
+                    <strong>Agent Console</strong>
+                    <small>DiplomaWork</small>
+                </span>
+            </a>
+            <nav>
+                <a href="/" class="{{ 'active' if active_page == 'dashboard' else '' }}">Dashboard</a>
+                <a href="/tasks" class="{{ 'active' if active_page == 'tasks' else '' }}">Task Queue</a>
+                <a href="/tasks/new" class="{{ 'active' if active_page == 'new_task' else '' }}">Create Task</a>
+            </nav>
+            <form method="post" action="/demo-tasks" class="sidebar-form">
+                <button type="submit">Create Demo Set</button>
+            </form>
+        </aside>
+        <main class="content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>

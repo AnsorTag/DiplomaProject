@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Task Queue | Agent Console{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <p class="eyebrow">Queue inspection</p>
+        <h1>Task queue</h1>
+    </div>
+    <a class="button" href="/tasks/new">Create task</a>
+</section>
+
+<form class="filters" method="get" action="/tasks">
+    <label>
+        Status
+        <select name="status">
+            <option value="">All statuses</option>
+            {% for status in status_order %}
+            <option value="{{ status }}" {{ 'selected' if selected_status == status else '' }}>{{ status }}</option>
+            {% endfor %}
+        </select>
+    </label>
+    <label>
+        Search
+        <input name="q" value="{{ query }}" placeholder="type, agent, result, error">
+    </label>
+    <button type="submit">Apply</button>
+    <a class="button secondary" href="/tasks">Reset</a>
+</form>
+
+<section class="panel">
+    <div class="panel-heading">
+        <h2>{{ tasks|length }} visible tasks</h2>
+    </div>
+    {% include "_task_table.html" with context %}
+</section>
+{% endblock %}
