@@ -19,7 +19,7 @@ COORDINATOR="${COORDINATOR:-coordinator}"
 RUN_TIMEOUT_SECONDS="${RUN_TIMEOUT_SECONDS:-}"
 MAVEN_OFFLINE="${MAVEN_OFFLINE:-false}"
 
-AGENTS="${EXECUTOR_1}:com.diplomawork.agents.executor.ExecutorAgent;${EXECUTOR_2}:com.diplomawork.agents.executor.ExecutorAgent;${COORDINATOR}:com.diplomawork.agents.coordinator.CoordinatorAgent(${EXECUTOR_1},${EXECUTOR_2})"
+AGENTS="${EXECUTOR_1}:com.diplomawork.agents.agent.ExecutorAgent;${EXECUTOR_2}:com.diplomawork.agents.agent.ExecutorAgent;${COORDINATOR}:com.diplomawork.agents.agent.CoordinatorAgent(${EXECUTOR_1},${EXECUTOR_2})"
 
 cd "${AGENT_SYSTEM_DIR}"
 

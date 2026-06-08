@@ -1,11 +1,11 @@
-package com.diplomawork.agents.coordinator;
+package com.diplomawork.agents.agent;
 
+import com.diplomawork.agents.behaviours.CoordinatorSchedulingBehaviour;
 import com.diplomawork.agents.db.TaskRepository;
 import com.diplomawork.agents.model.Task;
 
 import jade.core.AID;
 import jade.core.Agent;
-import jade.core.behaviours.TickerBehaviour;
 import jade.lang.acl.ACLMessage;
 
 import java.sql.SQLException;
@@ -33,21 +33,10 @@ public class CoordinatorAgent extends Agent {
         System.out.println(getLocalName() + " scheduling interval ms: " + SCHEDULING_INTERVAL_MILLIS);
         recoverStaleTasks();
         assignOnePendingTask();
-        addBehaviour(new SchedulingBehaviour(this, SCHEDULING_INTERVAL_MILLIS));
+        addBehaviour(new CoordinatorSchedulingBehaviour(this, SCHEDULING_INTERVAL_MILLIS));
     }
 
-    private class SchedulingBehaviour extends TickerBehaviour {
-        SchedulingBehaviour(Agent agent, long period) {
-            super(agent, period);
-        }
-
-        @Override
-        protected void onTick() {
-            assignOnePendingTask();
-        }
-    }
-
-    private void assignOnePendingTask() {
+    public void assignOnePendingTask() {
         TaskRepository repository = new TaskRepository();
         try {
             List<String> executorNames = configuredExecutorNames();

@@ -4,7 +4,8 @@ The first executor agent receives assignment messages and performs task-type-bas
 
 ## File
 
-- `agent-system/src/main/java/com/diplomawork/agents/executor/ExecutorAgent.java`
+- `agent-system/src/main/java/com/diplomawork/agents/agent/ExecutorAgent.java`
+- `agent-system/src/main/java/com/diplomawork/agents/behaviours/TaskAssignmentReceiverBehaviour.java`
 
 ## Current Behavior
 

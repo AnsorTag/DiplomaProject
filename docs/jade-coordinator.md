@@ -4,7 +4,8 @@ The JADE coordinator periodically schedules pending tasks and notifies the selec
 
 ## File
 
-- `agent-system/src/main/java/com/diplomawork/agents/coordinator/CoordinatorAgent.java`
+- `agent-system/src/main/java/com/diplomawork/agents/agent/CoordinatorAgent.java`
+- `agent-system/src/main/java/com/diplomawork/agents/behaviours/CoordinatorSchedulingBehaviour.java`
 
 ## Current Behavior
 
@@ -40,7 +41,7 @@ coordinates documented by the JADE project site.
 From `agent-system/`:
 
 ```bash
-mvn exec:java -Dexec.mainClass=jade.Boot -Dexec.args="-agents executor1:com.diplomawork.agents.executor.ExecutorAgent;executor2:com.diplomawork.agents.executor.ExecutorAgent;coordinator:com.diplomawork.agents.coordinator.CoordinatorAgent(executor1,executor2)"
+mvn exec:java -Dexec.mainClass=jade.Boot -Dexec.args="-agents executor1:com.diplomawork.agents.agent.ExecutorAgent;executor2:com.diplomawork.agents.agent.ExecutorAgent;coordinator:com.diplomawork.agents.agent.CoordinatorAgent(executor1,executor2)"
 ```
 
 This starts a JADE platform and launches one coordinator agent.
@@ -48,7 +49,7 @@ This starts a JADE platform and launches one coordinator agent.
 For a short verification run without leaving the platform active:
 
 ```bash
-timeout 30s mvn exec:java -Dexec.mainClass=jade.Boot -Dexec.args="-agents executor1:com.diplomawork.agents.executor.ExecutorAgent;executor2:com.diplomawork.agents.executor.ExecutorAgent;coordinator:com.diplomawork.agents.coordinator.CoordinatorAgent(executor1,executor2)"
+timeout 30s mvn exec:java -Dexec.mainClass=jade.Boot -Dexec.args="-agents executor1:com.diplomawork.agents.agent.ExecutorAgent;executor2:com.diplomawork.agents.agent.ExecutorAgent;coordinator:com.diplomawork.agents.agent.CoordinatorAgent(executor1,executor2)"
 ```
 
 Verified behavior: the coordinator starts, repeatedly reads pending tasks from PostgreSQL, chooses a configured executor by load, atomically assigns pending tasks, and sends the selected executor a task assignment message.
