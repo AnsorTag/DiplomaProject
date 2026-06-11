@@ -189,15 +189,52 @@ Monitor tasks and inspect lifecycle events:
 ./venv/bin/python scripts/list_task_events.py --limit 20
 ```
 
-Run the optional web dashboard:
+## Frontend Monitoring
+
+The project includes an optional FastAPI frontend for monitoring and demo
+workflows. It reads the same PostgreSQL task schema used by the JADE agents.
+
+Start the dashboard:
 
 ```bash
 scripts/run_web.sh
 ```
 
-Open `http://127.0.0.1:8000`. The dashboard reads the same PostgreSQL task
-schema, creates new tasks, and shows lifecycle events. It does not schedule or
-execute tasks; JADE agents remain responsible for that.
+Open:
+
+```text
+http://127.0.0.1:8000
+```
+
+The dashboard shows:
+
+- task counts by status;
+- active executor workloads;
+- recent lifecycle events;
+- a filterable task queue;
+- task input, result, error, and event timeline details.
+
+It can also create supported task types and the standard demo task set. It does
+not schedule or execute tasks; JADE agents remain responsible for assigning and
+running work.
+
+Run the frontend alongside the agents for live monitoring. In one terminal:
+
+```bash
+scripts/run_web.sh
+```
+
+In another terminal:
+
+```bash
+scripts/run_agents.sh
+```
+
+Use `WEB_HOST` and `WEB_PORT` to override the default bind address:
+
+```bash
+WEB_PORT=8080 scripts/run_web.sh
+```
 
 ## Supported Task Types
 
