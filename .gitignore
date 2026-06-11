@@ -16,6 +16,7 @@ agent-system/MTPs-Main-Container.txt
 .vscode/
 .DS_Store
 /AGENT.md
+.~lock.*#
 
 # Logs
 *.log
